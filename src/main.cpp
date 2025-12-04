@@ -11,9 +11,9 @@ ez::Drive chassis(
     {-16, -17, -18},     // Left Chassis Ports (negative port will reverse it!)
     {11, 12, 14},  // Right Chassis Ports (negative port will reverse it!)
 
-    7,      // IMU Port
-    4.125,  // Wheel Diameter (Remember, 4" wheels without screw holes are actually 4.125!)
-    343);   // Wheel RPM = cartridge * (motor gear / wheel gear)
+    1,      // IMU Port
+    3.25,  // Wheel Diameter (Remember, 4" wheels without screw holes are actually 4.125!)
+    450);   // Wheel RPM = cartridge * (motor gear / wheel gear)
 
 // Uncomment the trackers you're using here!
 // - `8` and `9` are smart ports (making these negative will reverse the sensor)
@@ -21,7 +21,7 @@ ez::Drive chassis(
 // - `2.75` is the wheel diameter
 // - `4.0` is the distance from the center of the wheel to the center of the robot
 // ez::tracking_wheel horiz_tracker(8, 2.75, 4.0);  // This tracking wheel is perpendicular to the drive wheels
-// ez::tracking_wheel vert_tracker(9, 2.75, 4.0);   // This tracking wheel is parallel to the drive wheels
+ez::tracking_wheel vert_tracker(2, 2.75, -1);   // This tracking wheel is parallel to the drive wheels
 
 /**
  * Runs initialization code. This occurs as soon as the program is started.
@@ -42,7 +42,7 @@ void initialize() {
   // Look at your vertical tracking wheel and decide if it's to the left or right of the center of the robot
   //  - change `left` to `right` if the tracking wheel is to the right of the centerline
   //  - ignore this if you aren't using a vertical tracker
-  // chassis.odom_tracker_left_set(&vert_tracker);
+  chassis.odom_tracker_left_set(&vert_tracker);
 
   // Configure your chassis controls
   chassis.opcontrol_curve_buttons_toggle(true);   // Enables modifying the controller curve with buttons on the joysticks
@@ -247,6 +247,8 @@ bool pto_in_drive_mode = false;  // false = intake, true = drive
 int PTO_DELAY_MS = 120;          // 120ms shift time
 int pto_timer = 0;
 bool pto_changing = false;
+bool wing_deployed = false;
+bool matchloader_deployed = false;
 
 while (true) {
     ez_template_extras();
@@ -291,6 +293,27 @@ while (true) {
             flywheel.move(master.get_analog(ANALOG_RIGHT_Y));
         }
     }
+
+
+    if (master.get_digital_new_press(DIGITAL_DOWN)) 
+    {
+      wing_deployed = !wing_deployed;
+      if (wing_deployed)
+        wing.set_value(true);
+      else
+        wing.set_value(false);
+    }
+
+    if (master.get_digital_new_press(DIGITAL_B))
+    {
+      matchloader_deployed = !matchloader_deployed;
+      if (matchloader_deployed)
+        matchloader.set_value(true);
+      else
+        matchloader.set_value(false);
+    }
+
+
 
     pros::delay(ez::util::DELAY_TIME);  // This is used for timer calculations!  Keep this ez::util::DELAY_TIME
   }
