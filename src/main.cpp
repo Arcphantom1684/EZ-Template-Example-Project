@@ -282,7 +282,7 @@ while (true) {
 
     // Motor control (only if PTO finished shifting)
     if (!pto_changing) {
-        if (!pto_in_drive_mode) { // intake mode → buttons control intake/flywheel
+        if (!pto_in_drive_mode) { // intake mode or buttons control intake/flywheel
             if (master.get_digital(DIGITAL_R2)) { intake.move(127); flywheel.move(-127); }
             else if (master.get_digital(DIGITAL_R1)) { intake.move(127); flywheel.move(70); }
             else if (master.get_digital(DIGITAL_L1)) { intake.move(-127); flywheel.move(70); }
