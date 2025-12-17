@@ -16,9 +16,9 @@ const int SWING_SPEED = 110;
 void default_constants() {
   // P, I, D, and Start I
   chassis.pid_drive_constants_set(7.7, 0.0, 11.3);         // Fwd/rev constants, used for odom and non odom motions
-  chassis.pid_heading_constants_set(7.0, 0.0, 10.0);        // Holds the robot straight while going forward without odom
-  chassis.pid_turn_constants_set(5.0, 0.0, 28.3, 15.0);     // Turn in place constants
-  chassis.pid_swing_constants_set(4.5, 0.0, 8.0);           // Swing constants
+  chassis.pid_heading_constants_set(8.0, 0.0, 10.5);        // Holds the robot straight while going forward without odom
+  chassis.pid_turn_constants_set(5.0, 0.0, 28.6, 15.0);     // Turn in place constants
+  chassis.pid_swing_constants_set(2.9, 0.0, 5.5);           // Swing constants
   chassis.pid_odom_angular_constants_set(6.5, 0.0, 52.5);    // Angular control for odom motions
   chassis.pid_odom_boomerang_constants_set(5.8, 0.0, 32.5);  // Angular control for boomerang motions
 
@@ -39,7 +39,7 @@ void default_constants() {
 
   // The amount that turns are prioritized over driving in odom motions
   // - if you have tracking wheels, you can run this higher.  1.0 is the max
-  chassis.odom_turn_bias_set(0.9);
+  chassis.odom_turn_bias_set(0.3);
 
   chassis.odom_look_ahead_set(7_in);           // This is how far ahead in the path the robot looks at
   chassis.odom_boomerang_distance_set(16_in);  // This sets the maximum distance away from target that the carrot point can be
@@ -57,17 +57,133 @@ void drive_example() {
   // The third parameter is a boolean (true or false) for enabling/disabling a slew at the start of drive motions
   // for slew, only enable it when the drive distance is greater than the slew distance + a few inches
 
-  chassis.pid_drive_set(24_in, DRIVE_SPEED, true);
+  /*chassis.pid_drive_set(24_in, DRIVE_SPEED, true);
   chassis.pid_wait();
 
   chassis.pid_drive_set(-12_in, DRIVE_SPEED);
   chassis.pid_wait();
 
   chassis.pid_drive_set(-12_in, DRIVE_SPEED);
+  chassis.pid_wait();*/
+
+
+
+  intake.move(127);
+  chassis.pid_drive_set(-5_in, 80);
+  chassis.pid_wait_quick_chain();
+  chassis.pid_drive_set(44, DRIVE_SPEED);
+  chassis.pid_wait_quick();
+  chassis.pid_turn_set(-87_deg, 90);
+  matchloader.set_value(true);
   chassis.pid_wait();
+  chassis.pid_drive_set(-8_in, DRIVE_SPEED);
+  chassis.pid_wait_quick_chain();
+  chassis.pid_drive_set(-2_in, 80);
+  chassis.pid_wait_quick_chain();
+  pros::delay(700);
+  chassis.pid_drive_set(27_in, DRIVE_SPEED);
+  pros::delay(300);
+  flywheel.move(-127);
+  chassis.pid_wait_quick_chain();
+  pros::delay(1400);
+  matchloader.set_value(false);
+  flywheel.move(127);
+  chassis.pid_turn_set(1_deg, TURN_SPEED);
+  chassis.pid_wait_quick_chain();
+  chassis.pid_drive_set(-7_in, 100);
+  chassis.pid_wait_quick_chain();
+  matchloader.set_value(true);
+  pros::delay(400);
+  matchloader.set_value(false);
+  chassis.pid_drive_set(-40_in, 80);
+  chassis.pid_wait_quick_chain();
+  matchloader.set_value(true);
+  chassis.pid_drive_set(-5_in, DRIVE_SPEED);
+  chassis.pid_wait_quick_chain();
+  chassis.pid_turn_set(-48_deg, TURN_SPEED);
+  chassis.pid_wait_quick_chain();
+  chassis.pid_drive_set(20_in, DRIVE_SPEED);
+  intake.move(127);
+  chassis.pid_wait_quick_chain();
+  chassis.pid_drive_set(-2_in, DRIVE_SPEED);
+  chassis.pid_wait_quick_chain();
+  flywheel.move(-100);
+  pros::delay(500);
+  flywheel.move(0);
+  chassis.pid_drive_set(-45_in, DRIVE_SPEED);
+  chassis.pid_wait_quick_chain();
+  chassis.pid_turn_set(-90_deg, TURN_SPEED);
+  chassis.pid_wait_quick_chain();
+  chassis.pid_drive_set(20_in, DRIVE_SPEED);
+  chassis.pid_wait_quick_chain();
+  intake.move(127);
+  flywheel.move(-127);
+  pros::delay(1500);
 
 
- 
+
+
+// 9 ball middle top goal blue auton
+  /*intake.move(127);
+  flywheel.move(50);
+  chassis.pid_turn_set(-17_deg, 90);
+  chassis.pid_wait_quick_chain();
+  chassis.pid_drive_set(-17_in, DRIVE_SPEED);
+  chassis.pid_wait_quick_chain();
+  matchloader.set_value(true);
+  pros::delay(500);
+  chassis.pid_turn_set(-47_deg, 90);
+  chassis.pid_wait_quick_chain();
+  matchloader.set_value(false); 
+  chassis.pid_drive_set(-25_in, DRIVE_SPEED);
+  chassis.pid_wait_quick_chain();
+  pros::delay(500);
+  chassis.pid_turn_set(-57_deg, 90);
+  chassis.pid_wait_quick_chain();
+  matchloader.set_value(true);
+  chassis.pid_drive_set(-3_in, DRIVE_SPEED);
+  chassis.pid_wait();
+  chassis.pid_drive_set(5_in, DRIVE_SPEED);
+  chassis.pid_wait_quick_chain();
+  chassis.pid_turn_set(-55_deg, 90);
+  chassis.pid_wait_quick_chain();
+  chassis.pid_swing_set(ez::LEFT_SWING, 0_deg, SWING_SPEED, 53);
+  chassis.pid_wait();
+  chassis.pid_swing_set(ez::LEFT_SWING, 181_deg, SWING_SPEED, 0);
+  chassis.pid_wait();
+  flywheel.move(-127);
+  chassis.pid_drive_set(8_in, DRIVE_SPEED);
+  chassis.pid_wait_quick_chain();
+  pros::delay(800);
+  chassis.pid_drive_set(-2_in, DRIVE_SPEED);
+  chassis.pid_wait_quick_chain();
+  chassis.pid_turn_set(177_deg, TURN_SPEED);
+  chassis.pid_wait_quick_chain();
+  chassis.pid_drive_set(-20_in, DRIVE_SPEED);
+  flywheel.move(127);
+  chassis.pid_wait_quick_chain();
+  chassis.pid_drive_set(-4_in, 50);
+  chassis.pid_wait_quick_chain();
+  pros::delay(700);
+  chassis.pid_turn_set(207_deg, TURN_SPEED);
+  chassis.pid_wait_quick_chain();
+  chassis.pid_drive_set(28_in, DRIVE_SPEED);
+  chassis.pid_wait_quick_chain();
+  chassis.pid_turn_set(220_deg, TURN_SPEED);
+  chassis.pid_wait_quick_chain();
+  intake.move(-50);
+  chassis.pid_drive_set(25_in, DRIVE_SPEED);
+  intake.move(127);
+  chassis.pid_wait_quick_chain();
+  pros::delay(500);
+  chassis.pid_drive_set(-10_in, DRIVE_SPEED);
+  chassis.pid_wait_quick_chain();
+  chassis.pid_drive_set(10_in, DRIVE_SPEED);
+  chassis.pid_wait_quick_chain();*/
+
+
+
+  pros::delay(5000);
 }
 
 ///
@@ -77,14 +193,43 @@ void turn_example() {
   // The first parameter is the target in degrees
   // The second parameter is max speed the robot will drive at
 
-  chassis.pid_turn_set(90_deg, TURN_SPEED);
+  intake.move(127);
+  chassis.pid_drive_set(-10_in, 80);
+  chassis.pid_wait_quick_chain();
+  chassis.pid_drive_set(51, DRIVE_SPEED);
   chassis.pid_wait();
+  chassis.pid_turn_set(-87_deg, 90);
+  matchloader.set_value(true);
+  chassis.pid_wait();
+  chassis.pid_drive_set(-10_in, 100);
+  chassis.pid_wait_quick_chain();
+  pros::delay(900);
+  chassis.pid_drive_set(29_in, DRIVE_SPEED);
+  chassis.pid_wait_quick_chain();
+  flywheel.move(-127);
+  pros::delay(1500);
+  matchloader.set_value(false);
+  flywheel.move(0);
+  chassis.pid_turn_set(1_deg, TURN_SPEED);
+  chassis.pid_wait_quick_chain();
+  chassis.pid_drive_set(-7.5_in, 100);
+  chassis.pid_wait_quick_chain();
+  matchloader.set_value(true);
+  pros::delay(400);
+  matchloader.set_value(false);
+  chassis.pid_drive_set(-50_in, 100);
+  chassis.pid_wait_quick_chain();
+  matchloader.set_value(true);
+  pros::delay(400);
+  matchloader.set_value(false);
+  chassis.pid_turn_set(-48_deg, TURN_SPEED);
+  chassis.pid_wait_quick_chain();
+  intake.move(0);
+  intake.move_relative(-100, 127);
+  chassis.pid_drive_set(22_in, DRIVE_SPEED);
+  chassis.pid_wait_quick_chain();
+  intake.move(127);
 
-  chassis.pid_turn_set(45_deg, TURN_SPEED);
-  chassis.pid_wait();
-
-  chassis.pid_turn_set(0_deg, TURN_SPEED);
-  chassis.pid_wait();
 }
 
 ///
@@ -247,13 +392,13 @@ void odom_drive_example() {
   // You can replace pid_drive_set with pid_odom_set and your robot will
   // have better error correction.
 
-  chassis.pid_odom_set(24_in, DRIVE_SPEED, true);
+  chassis.pid_odom_set(10_in, DRIVE_SPEED, true);
   chassis.pid_wait();
 
-  chassis.pid_odom_set(-12_in, DRIVE_SPEED);
+  chassis.pid_odom_set(-5_in, DRIVE_SPEED);
   chassis.pid_wait();
 
-  chassis.pid_odom_set(-12_in, DRIVE_SPEED);
+  chassis.pid_odom_set(-5_in, DRIVE_SPEED);
   chassis.pid_wait();
 }
 
