@@ -8,7 +8,7 @@
 // Chassis constructor
 ez::Drive chassis(
     // These are your drive motors, the first motor is used for sensing!
-    {-16, -17, -18},     // Left Chassis Ports (negative port will reverse it!)
+    {-15, -17, -18},     // Left Chassis Ports (negative port will reverse it!)
     {11, 12, 14},  // Right Chassis Ports (negative port will reverse it!)
 
     2,      // IMU Port
@@ -21,7 +21,7 @@ ez::Drive chassis(
 // - `2.75` is the wheel diameter
 // - `4.0` is the distance from the center of the wheel to the center of the robot
 // ez::tracking_wheel horiz_tracker(8, 2.75, 4.0);  // This tracking wheel is perpendicular to the drive wheels
-ez::tracking_wheel vert_tracker(2, 2.75, -1);   // This tracking wheel is parallel to the drive wheels
+ez::tracking_wheel vert_tracker(15, 2.75, -1);   // This tracking wheel is parallel to the drive wheels
 
 /**
  * Runs initialization code. This occurs as soon as the program is started.
@@ -58,11 +58,11 @@ void initialize() {
 
   // Autonomous Selector using LLEMU
   ez::as::auton_selector.autons_add({
-      {"9 ball Middle Top Goal Blue", drive_example},
-      {"Turn\n\nTurn 3 times.", turn_example},
-      {"Drive and Turn\n\nDrive forward, turn, come back", drive_and_turn},
-      {"Drive and Turn\n\nSlow down during drive", wait_until_change_speed},
-      {"Swing Turn\n\nSwing in an 'S' curve", swing_example},
+      {"Skills", drive_example},
+      {"Win Point", turn_example},
+      {"9 Ball Top Middle", drive_and_turn},
+      {"9 Ball Long Left", wait_until_change_speed},
+      {"9 Ball Long Right", swing_example},
       {"Motion Chaining\n\nDrive forward, turn, and come back, but blend everything together :D", motion_chaining},
       {"Combine all 3 movements", combining_movements},
       {"Interference\n\nAfter driving forward, robot performs differently if interfered or not", interfered_example},
@@ -78,6 +78,7 @@ void initialize() {
   chassis.initialize();
   ez::as::initialize();
   master.rumble(chassis.drive_imu_calibrated() ? "." : "---");
+  chassis.odom_enable(true);
 }
 
 /**
@@ -313,6 +314,40 @@ while (true) {
         matchloader.set_value(false);
     }
 
+
+
+    if (master.get_digital_new_press(DIGITAL_RIGHT))
+    {
+      // Reset odometry
+      chassis.drive_sensor_reset();               // Reset drive sensors to 0
+      chassis.drive_imu_reset();                  // Reset gyro position to 0
+      chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position to (0, 0, 0)
+        
+
+        chassis.pid_turn_set(-55_deg, 127);
+        chassis.pid_wait_quick_chain();
+        chassis.pid_swing_set(ez::RIGHT_SWING, -17, 127, 0);
+        chassis.pid_wait_quick_chain();
+
+
+    }
+
+    if (master.get_digital_new_press(DIGITAL_Y))
+    {
+      // Reset odometry
+      chassis.drive_sensor_reset();               // Reset drive sensors to 0
+      chassis.drive_imu_reset();                  // Reset gyro position to 0
+      chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position to (0, 0, 0)
+        
+
+        chassis.pid_turn_set(-55_deg, 127);
+        chassis.pid_wait_quick_chain();
+        chassis.pid_swing_set(ez::RIGHT_SWING, -17, 127, 0);
+        chassis.pid_wait_quick_chain();
+
+      
+
+    }
 
 
     pros::delay(ez::util::DELAY_TIME);  // This is used for timer calculations!  Keep this ez::util::DELAY_TIME

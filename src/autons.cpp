@@ -9,6 +9,49 @@
 const int DRIVE_SPEED = 110;
 const int TURN_SPEED = 90;
 const int SWING_SPEED = 110;
+bool flag = true;
+
+void auto_align_with_distance(double tolerance = 20.0)
+{
+  double leftDist = lf.get_distance();
+  double rightDist = rf.get_distance();
+  double diff = leftDist - rightDist;
+
+  while (std::abs(diff) > tolerance)
+  {
+    leftDist = lf.get_distance();
+    rightDist = rf.get_distance();
+    diff = leftDist - rightDist;
+
+    if (diff > tolerance)
+    {
+      // Left is farther than right, turn right
+      chassis.pid_turn_relative_set(3_deg, TURN_SPEED);
+      chassis.pid_wait_quick_chain();
+    }
+    else if (diff < -tolerance)
+    {
+      // Right is farther than left, turn left
+      chassis.pid_turn_relative_set(-3_deg, TURN_SPEED);
+      chassis.pid_wait_quick_chain();
+    }
+    chassis.pid_wait();
+    pros::delay(20);
+  }
+}
+
+
+
+void drive_with_sensor(double targetDistance)
+{
+  double distance = ((targetDistance - lf.get_distance()) / 25.4);
+  chassis.pid_drive_set(-distance, DRIVE_SPEED);
+  chassis.pid_wait();
+}
+
+
+
+
 
 ///
 // Constants
@@ -25,7 +68,7 @@ void default_constants() {
   // Exit conditions
   chassis.pid_turn_exit_condition_set(90_ms, 3_deg, 250_ms, 7_deg, 500_ms, 500_ms);
   chassis.pid_swing_exit_condition_set(90_ms, 3_deg, 250_ms, 7_deg, 500_ms, 500_ms);
-  chassis.pid_drive_exit_condition_set(90_ms, 1_in, 250_ms, 3_in, 500_ms, 500_ms);
+  chassis.pid_drive_exit_condition_set(90_ms, 1_in, 250_ms, 3_in, 250_ms, 250_ms);
   chassis.pid_odom_turn_exit_condition_set(90_ms, 3_deg, 250_ms, 7_deg, 500_ms, 750_ms);
   chassis.pid_odom_drive_exit_condition_set(90_ms, 1_in, 250_ms, 3_in, 500_ms, 750_ms);
   chassis.pid_turn_chain_constant_set(3_deg);
@@ -46,6 +89,7 @@ void default_constants() {
   chassis.odom_boomerang_dlead_set(0.625);     // This handles how aggressive the end of boomerang motions are
 
   chassis.pid_angle_behavior_set(ez::shortest);  // Changes the default behavior for turning, this defaults it to the shortest path there
+  chassis.drive_imu_scaler_set(1.0167);        // Adjusts the sensitivity of the IMU when driving without odom
 }
 
 ///
@@ -65,15 +109,102 @@ void drive_example() {
 
   chassis.pid_drive_set(-12_in, DRIVE_SPEED);
   chassis.pid_wait();*/
-
-
-
+ 
   intake.move(127);
+  wing.set_value(true);
+  chassis.pid_drive_set(-40_in, DRIVE_SPEED, true);
+  chassis.pid_wait_until(-8_in);
+  chassis.pid_swing_set(ez::LEFT_SWING, -40, SWING_SPEED, 0);
+  chassis.pid_wait_quick();
+  chassis.pid_drive_set(-21_in, DRIVE_SPEED, true);
+  chassis.pid_wait_quick_chain();
+  chassis.pid_turn_set(-80_deg, TURN_SPEED);
+  chassis.pid_wait_quick_chain();
+  chassis.pid_drive_set(-5_in, DRIVE_SPEED, true);
+  chassis.pid_wait_quick_chain();
+  matchloader.set_value(true);
+  pros::delay(200);
+  chassis.pid_swing_set(ez::LEFT_SWING, 0, SWING_SPEED, 0);
+  chassis.pid_wait_quick();
+  chassis.pid_drive_set(25_in, DRIVE_SPEED);
+  chassis.pid_wait_quick_chain();
+  auto_align_with_distance();
+
+    chassis.drive_sensor_reset();               // Reset drive sensors to 0
+    chassis.drive_imu_reset();                  // Reset gyro position to 0
+    chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position to (0, 0, 0)
+  
+  chassis.pid_turn_set(90_deg, TURN_SPEED);
+  chassis.pid_wait_quick_chain();
+  drive_with_sensor(445.0);
+  drive_with_sensor(445.0);
+  auto_align_with_distance();
+
+    chassis.drive_sensor_reset();               // Reset drive sensors to 0
+    chassis.drive_imu_reset();                  // Reset gyro position to 0
+    chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position to (0, 0, 0)
+
+  chassis.pid_turn_set(90_deg, TURN_SPEED);
+  chassis.pid_wait_quick_chain();
+  chassis.pid_drive_set(25_in, DRIVE_SPEED);
+  chassis.pid_wait_quick_chain();
+  flywheel.move(-127);
+  pros::delay(2000);
+  chassis.pid_drive_set(-25_in, DRIVE_SPEED);
+  chassis.pid_wait_quick_chain();
+  flywheel.move(0);
   chassis.pid_drive_set(-5_in, 80);
   chassis.pid_wait_quick_chain();
-  chassis.pid_drive_set(44, DRIVE_SPEED);
+
+
+
+  
+
+ /* intake.move(127);
+  wing.set_value(true);
+  chassis.pid_drive_set(-40_in, DRIVE_SPEED, true);
+  chassis.pid_wait_until(-8_in);
+  chassis.pid_swing_set(ez::LEFT_SWING, -150, SWING_SPEED, 0);
+  chassis.pid_wait_until(-15_deg);
+  matchloader.set_value(true);
+  chassis.pid_wait_quick_chain();
+  chassis.pid_drive_set(-35_in, DRIVE_SPEED);
+  chassis.pid_wait_quick_chain();
+  chassis.pid_turn_set(-180_deg, TURN_SPEED);
+  chassis.pid_wait_quick_chain();
+  chassis.pid_drive_set(-10_in, 100);
+  chassis.pid_wait_quick_chain();
+  chassis.pid_drive_set(30_in, DRIVE_SPEED);
+  chassis.pid_wait_until(25_in);
+  flywheel.move(-127);
+  wing.set_value(false);
+  pros::delay(2500);
+
+  chassis.drive_sensor_reset();               // Reset drive sensors to 0
+  chassis.drive_imu_reset();                  // Reset gyro position to 0
+  chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position to (0, 0, 0)
+      chassis.pid_turn_set(-55_deg, 127);
+      chassis.pid_wait_quick_chain();
+      chassis.pid_swing_set(ez::RIGHT_SWING, -5, 127, 0);
+      chassis.pid_wait_quick_chain();
+
+  matchloader.set_value(false);
+  chassis.pid_drive_set(15_in, DRIVE_SPEED);
+  chassis.pid_wait_quick_chain();
+  chassis.pid_turn_set(45_deg, TURN_SPEED);
+  chassis.pid_wait_quick_chain();
+*/
+
+
+
+
+  // Skills Auton
+  
+  /*intake.move(127);
+  wing.set_value(true);
+  chassis.pid_drive_set(39, DRIVE_SPEED);
   chassis.pid_wait_quick();
-  chassis.pid_turn_set(-87_deg, 90);
+  chassis.pid_turn_set(-88_deg, 90);
   matchloader.set_value(true);
   chassis.pid_wait();
   chassis.pid_drive_set(-8_in, DRIVE_SPEED);
@@ -81,105 +212,169 @@ void drive_example() {
   chassis.pid_drive_set(-2_in, 80);
   chassis.pid_wait_quick_chain();
   pros::delay(700);
-  chassis.pid_drive_set(27_in, DRIVE_SPEED);
-  pros::delay(300);
-  flywheel.move(-127);
+  chassis.pid_drive_set(5_in, 80);
   chassis.pid_wait_quick_chain();
-  pros::delay(1400);
-  matchloader.set_value(false);
-  flywheel.move(127);
-  chassis.pid_turn_set(1_deg, TURN_SPEED);
-  chassis.pid_wait_quick_chain();
-  chassis.pid_drive_set(-7_in, 100);
-  chassis.pid_wait_quick_chain();
-  matchloader.set_value(true);
-  pros::delay(400);
-  matchloader.set_value(false);
-  chassis.pid_drive_set(-40_in, 80);
-  chassis.pid_wait_quick_chain();
-  matchloader.set_value(true);
   chassis.pid_drive_set(-5_in, DRIVE_SPEED);
   chassis.pid_wait_quick_chain();
-  chassis.pid_turn_set(-48_deg, TURN_SPEED);
-  chassis.pid_wait_quick_chain();
-  chassis.pid_drive_set(20_in, DRIVE_SPEED);
-  intake.move(127);
-  chassis.pid_wait_quick_chain();
-  chassis.pid_drive_set(-2_in, DRIVE_SPEED);
-  chassis.pid_wait_quick_chain();
-  flywheel.move(-100);
   pros::delay(500);
-  flywheel.move(0);
-  chassis.pid_drive_set(-45_in, DRIVE_SPEED);
+  chassis.pid_drive_set(10_in, DRIVE_SPEED);
   chassis.pid_wait_quick_chain();
-  chassis.pid_turn_set(-90_deg, TURN_SPEED);
-  chassis.pid_wait_quick_chain();
-  chassis.pid_drive_set(20_in, DRIVE_SPEED);
-  chassis.pid_wait_quick_chain();
-  intake.move(127);
-  flywheel.move(-127);
-  pros::delay(1500);
-
-
-
-
-// 9 ball middle top goal blue auton
-  /*intake.move(127);
-  flywheel.move(50);
-  chassis.pid_turn_set(-17_deg, 90);
-  chassis.pid_wait_quick_chain();
-  chassis.pid_drive_set(-17_in, DRIVE_SPEED);
-  chassis.pid_wait_quick_chain();
-  matchloader.set_value(true);
-  pros::delay(500);
-  chassis.pid_turn_set(-47_deg, 90);
-  chassis.pid_wait_quick_chain();
-  matchloader.set_value(false); 
-  chassis.pid_drive_set(-25_in, DRIVE_SPEED);
-  chassis.pid_wait_quick_chain();
-  pros::delay(500);
-  chassis.pid_turn_set(-57_deg, 90);
-  chassis.pid_wait_quick_chain();
-  matchloader.set_value(true);
-  chassis.pid_drive_set(-3_in, DRIVE_SPEED);
-  chassis.pid_wait();
-  chassis.pid_drive_set(5_in, DRIVE_SPEED);
-  chassis.pid_wait_quick_chain();
-  chassis.pid_turn_set(-55_deg, 90);
-  chassis.pid_wait_quick_chain();
-  chassis.pid_swing_set(ez::LEFT_SWING, 0_deg, SWING_SPEED, 53);
-  chassis.pid_wait();
-  chassis.pid_swing_set(ez::LEFT_SWING, 181_deg, SWING_SPEED, 0);
-  chassis.pid_wait();
-  flywheel.move(-127);
-  chassis.pid_drive_set(8_in, DRIVE_SPEED);
-  chassis.pid_wait_quick_chain();
-  pros::delay(800);
-  chassis.pid_drive_set(-2_in, DRIVE_SPEED);
-  chassis.pid_wait_quick_chain();
-  chassis.pid_turn_set(177_deg, TURN_SPEED);
-  chassis.pid_wait_quick_chain();
-  chassis.pid_drive_set(-20_in, DRIVE_SPEED);
-  flywheel.move(127);
-  chassis.pid_wait_quick_chain();
-  chassis.pid_drive_set(-4_in, 50);
-  chassis.pid_wait_quick_chain();
-  pros::delay(700);
-  chassis.pid_turn_set(207_deg, TURN_SPEED);
-  chassis.pid_wait_quick_chain();
-  chassis.pid_drive_set(28_in, DRIVE_SPEED);
-  chassis.pid_wait_quick_chain();
-  chassis.pid_turn_set(220_deg, TURN_SPEED);
-  chassis.pid_wait_quick_chain();
-  intake.move(-50);
-  chassis.pid_drive_set(25_in, DRIVE_SPEED);
-  intake.move(127);
-  chassis.pid_wait_quick_chain();
-  pros::delay(500);
-  chassis.pid_drive_set(-10_in, DRIVE_SPEED);
+  chassis.pid_turn_set(-45_deg, TURN_SPEED);
   chassis.pid_wait_quick_chain();
   chassis.pid_drive_set(10_in, DRIVE_SPEED);
-  chassis.pid_wait_quick_chain();*/
+  chassis.pid_wait_quick_chain();
+  chassis.pid_swing_set(ez::RIGHT_SWING, -90, SWING_SPEED, 0);
+  chassis.pid_wait();
+  chassis.pid_drive_set(46_in, DRIVE_SPEED);
+  matchloader.set_value(false);
+  chassis.pid_wait();
+  chassis.pid_turn_set(-110_deg, TURN_SPEED);
+  chassis.pid_wait_quick_chain();
+  chassis.pid_drive_set(35_in, DRIVE_SPEED, false, false);
+  chassis.pid_wait_quick_chain();
+  chassis.pid_drive_set(-2_in, DRIVE_SPEED, true, false);
+  chassis.pid_wait_quick_chain();
+
+      chassis.drive_sensor_reset();               // Reset drive sensors to 0
+      chassis.drive_imu_reset();                  // Reset gyro position to 0
+      chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position to (0, 0, 0)
+
+  chassis.pid_swing_set(ez::RIGHT_SWING, -20, SWING_SPEED, 30);
+  flywheel.move(-127);
+  intake.move(127);
+  chassis.pid_wait_quick_chain();
+  pros::delay(2000);
+
+      chassis.drive_sensor_reset();               // Reset drive sensors to 0
+      chassis.drive_imu_reset();                  // Reset gyro position to 0
+      chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position to (0, 0, 0)
+
+  matchloader.set_value(true);
+  chassis.pid_drive_set(-2_in, DRIVE_SPEED);
+  chassis.pid_wait_quick_chain();
+  chassis.pid_drive_set(-20_in, DRIVE_SPEED);
+  chassis.pid_wait_quick_chain();
+  flywheel.move(0);
+  chassis.pid_drive_set(-5_in, 80);
+  chassis.pid_wait_quick_chain();
+  pros::delay(700);
+  chassis.pid_drive_set(5_in, 80);
+  chassis.pid_wait_quick_chain();
+  chassis.pid_drive_set(-5_in, DRIVE_SPEED);
+  chassis.pid_wait_quick_chain();
+  pros::delay(500);
+  chassis.pid_drive_set(5_in, DRIVE_SPEED);
+  chassis.pid_wait_quick_chain();
+  chassis.pid_drive_set(22_in, DRIVE_SPEED);
+  chassis.pid_wait_quick_chain();
+  flywheel.move(-127);
+  pros::delay(2000);
+  chassis.pid_drive_set(-7_in, DRIVE_SPEED);
+  chassis.pid_wait_quick_chain();
+  chassis.pid_turn_set(-88.5_deg, 100);
+  chassis.pid_wait();
+  flywheel.move(0);
+
+      chassis.drive_sensor_reset();               // Reset drive sensors to 0
+      chassis.drive_imu_reset();                  // Reset gyro position to 0
+      chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position to (0, 0, 0)
+
+
+
+  // Tune
+
+  chassis.pid_drive_set(-89_in, 100, true, true);
+  chassis.pid_wait_quick_chain();
+  chassis.pid_turn_set(86.5_deg, 90);
+  chassis.pid_wait();
+  chassis.pid_drive_set(15_in, 100);
+  chassis.pid_wait_quick_chain();
+  flywheel.move(-127);
+  pros::delay(500);
+
+      chassis.drive_sensor_reset();               // Reset drive sensors to 0
+      chassis.drive_imu_reset();                  // Reset gyro position to 0
+      chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position to (0, 0, 0)
+
+  flywheel.move(0);
+  chassis.pid_drive_set(-22_in, DRIVE_SPEED);
+  chassis.pid_wait_quick_chain();
+  chassis.pid_drive_set(-5_in, 80);
+  chassis.pid_wait_quick_chain();
+  pros::delay(700);
+  chassis.pid_drive_set(5_in, 80);
+  chassis.pid_wait_quick_chain();
+  chassis.pid_drive_set(-5_in, DRIVE_SPEED);
+  chassis.pid_wait_quick_chain();
+  pros::delay(500);
+  chassis.pid_drive_set(10_in, DRIVE_SPEED);
+  chassis.pid_wait_quick_chain();
+  chassis.pid_turn_set(45_deg, TURN_SPEED);
+  chassis.pid_wait_quick_chain();
+  chassis.pid_drive_set(10_in, DRIVE_SPEED);
+  chassis.pid_wait_quick_chain();
+  chassis.pid_swing_set(ez::RIGHT_SWING, 0, SWING_SPEED, 0);
+  chassis.pid_wait();
+  chassis.pid_drive_set(46_in, DRIVE_SPEED);
+  matchloader.set_value(false);
+  chassis.pid_wait();
+  chassis.pid_turn_set(-30_deg, TURN_SPEED);
+  chassis.pid_wait_quick_chain();
+  chassis.pid_drive_set(35_in, DRIVE_SPEED, false, false);
+  chassis.pid_wait_quick_chain();
+  chassis.pid_drive_set(-2_in, DRIVE_SPEED, true, false);
+  chassis.pid_wait_quick_chain();
+
+      chassis.drive_sensor_reset();               // Reset drive sensors to 0
+      chassis.drive_imu_reset();                  // Reset gyro position to 0
+      chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position to (0, 0, 0)
+
+  chassis.pid_swing_set(ez::RIGHT_SWING, -110, SWING_SPEED, 30);
+  flywheel.move(-127);
+  intake.move(127);
+  chassis.pid_wait_quick_chain();
+  pros::delay(2000);
+
+      chassis.drive_sensor_reset();               // Reset drive sensors to 0
+      chassis.drive_imu_reset();                  // Reset gyro position to 0
+      chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position to (0, 0, 0)
+
+  matchloader.set_value(true);
+  chassis.pid_drive_set(-21.5_in, DRIVE_SPEED);
+  chassis.pid_wait_quick_chain();
+  flywheel.move(0);
+  chassis.pid_drive_set(-5_in, 80);
+  chassis.pid_wait_quick_chain();
+  pros::delay(700);
+  chassis.pid_drive_set(5_in, 80);
+  chassis.pid_wait_quick_chain();
+  chassis.pid_drive_set(-5_in, DRIVE_SPEED);
+  chassis.pid_wait_quick_chain();
+  pros::delay(500);
+  chassis.pid_drive_set(5_in, DRIVE_SPEED);
+  chassis.pid_wait_quick_chain();
+  chassis.pid_drive_set(22_in, DRIVE_SPEED);
+  chassis.pid_wait_quick_chain();
+  flywheel.move(-127);
+  pros::delay(2000);
+  
+      chassis.drive_sensor_reset();               // Reset drive sensors to 0
+      chassis.drive_imu_reset();                  // Reset gyro position to 0
+      chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position to (0, 0, 0)
+      
+  flywheel.move(-127);
+  intake.move(-127);
+  matchloader.set_value(false);
+  chassis.pid_drive_set(-5_in, DRIVE_SPEED, true);
+  chassis.pid_wait_quick_chain();
+  chassis.pid_swing_set(ez::LEFT_SWING, -90, SWING_SPEED, 31);
+  chassis.pid_wait();
+  chassis.pid_turn_set(-79_deg, TURN_SPEED);
+  chassis.pid_wait_quick_chain();
+  chassis.pid_drive_set(-60_in, DRIVE_SPEED, false, true);
+  chassis.pid_wait_quick_chain();
+*/
+
 
 
 
@@ -187,119 +382,317 @@ void drive_example() {
 }
 
 ///
-// Turn Example
+// Win point auton
 ///
 void turn_example() {
-  // The first parameter is the target in degrees
-  // The second parameter is max speed the robot will drive at
-
+  
   intake.move(127);
-  chassis.pid_drive_set(-10_in, 80);
-  chassis.pid_wait_quick_chain();
-  chassis.pid_drive_set(51, DRIVE_SPEED);
-  chassis.pid_wait();
-  chassis.pid_turn_set(-87_deg, 90);
+  wing.set_value(true);
+  chassis.pid_drive_set(-40_in, DRIVE_SPEED, true);
+  chassis.pid_wait_until(-8_in);
+  chassis.pid_swing_set(ez::LEFT_SWING, -150, SWING_SPEED, 0);
+  chassis.pid_wait_until(-15_deg);
   matchloader.set_value(true);
-  chassis.pid_wait();
+  chassis.pid_wait_quick_chain();
+  chassis.pid_drive_set(-35_in, DRIVE_SPEED);
+  chassis.pid_wait_quick_chain();
+  chassis.pid_turn_set(-180_deg, TURN_SPEED);
+  chassis.pid_wait_quick_chain();
   chassis.pid_drive_set(-10_in, 100);
   chassis.pid_wait_quick_chain();
-  pros::delay(900);
-  chassis.pid_drive_set(29_in, DRIVE_SPEED);
+  chassis.pid_drive_set(30_in, DRIVE_SPEED);
+  chassis.pid_wait_until(25_in);
+  flywheel.move(-127);
+  wing.set_value(false);
+  pros::delay(2500);
+
+  chassis.drive_sensor_reset();               // Reset drive sensors to 0
+  chassis.drive_imu_reset();                  // Reset gyro position to 0
+  chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position to (0, 0, 0)
+      chassis.pid_turn_set(-55_deg, 127);
+      chassis.pid_wait_quick_chain();
+      chassis.pid_swing_set(ez::RIGHT_SWING, -5, 127, 0);
+      chassis.pid_wait_quick_chain();
+
+  matchloader.set_value(false);
+  chassis.pid_drive_set(15_in, DRIVE_SPEED);
+  chassis.pid_wait_quick_chain();
+  chassis.pid_turn_set(45_deg, TURN_SPEED);
+  chassis.pid_wait_quick_chain();
+
+  // Win Point Auton
+  /*intake.move(127);
+  chassis.pid_drive_set(-5_in, 80);
+  chassis.pid_wait_quick_chain();
+  chassis.pid_drive_set(44, DRIVE_SPEED);
+  chassis.pid_wait_quick();
+  chassis.pid_turn_set(-88_deg, 90);
+  matchloader.set_value(true);
+  chassis.pid_wait();
+  chassis.pid_drive_set(-8_in, DRIVE_SPEED);
+  chassis.pid_wait_quick_chain();
+  chassis.pid_drive_set(-3_in, 80);
+  chassis.pid_wait_quick_chain();
+  pros::delay(600);
+  chassis.pid_drive_set(27_in, DRIVE_SPEED);
+  pros::delay(420);
+  flywheel.move(-127);
+  chassis.pid_wait_quick_chain();
+  pros::delay(1400);
+  matchloader.set_value(false);
+  flywheel.move(127);
+  chassis.pid_turn_set(2_deg, TURN_SPEED);
+  chassis.pid_wait_quick_chain();
+  chassis.pid_drive_set(-7_in, 70);
+  chassis.pid_wait_quick_chain();
+  chassis.pid_drive_set(-35_in, DRIVE_SPEED);
+  chassis.pid_wait_quick_chain();
+  chassis.pid_drive_set(-5_in, 70);
+  chassis.pid_wait_quick_chain();
+  matchloader.set_value(true);
+  chassis.pid_drive_set(-6_in, DRIVE_SPEED);
+  chassis.pid_wait_quick_chain();
+  chassis.pid_turn_set(-47_deg, TURN_SPEED);
+  intake.move(90);
+  chassis.pid_wait_quick_chain();
+  chassis.pid_drive_set(10.5_in, DRIVE_SPEED);
+  pros::delay(400);
+  flywheel.move(-100);
+  chassis.pid_wait_quick();
+  pros::delay(700);
+  flywheel.move(0);
+  intake.move(127);
+  chassis.pid_drive_set(-41.5_in, DRIVE_SPEED);
+  chassis.pid_wait_quick_chain();
+  chassis.pid_turn_set(-90_deg, TURN_SPEED);
+  chassis.pid_wait_quick_chain();
+  chassis.pid_drive_set(-8_in, DRIVE_SPEED);
+  chassis.pid_wait_quick_chain();
+  chassis.pid_drive_set(3_in, 80);
+  chassis.pid_wait_quick_chain();
+  chassis.pid_drive_set(30_in, DRIVE_SPEED);
+  pros::delay(400);
+  flywheel.move(-127);
+  chassis.pid_wait_quick_chain();
+  intake.move(127);
+  pros::delay(1500);*/
+
+}
+
+///
+// 9 ball top middle auton
+///
+void drive_and_turn() {
+
+  // 9 ball top middle auton
+  intake.move(127);
+  flywheel.move(50);
+  chassis.pid_turn_set(-17_deg, 90);
+  chassis.pid_wait_quick_chain();
+  chassis.pid_drive_set(-17_in, DRIVE_SPEED);
+  chassis.pid_wait_quick_chain();
+  matchloader.set_value(true);
+  pros::delay(150);
+  chassis.pid_turn_set(-47_deg, 90);
+  chassis.pid_wait_quick_chain();
+  matchloader.set_value(false); 
+  chassis.pid_drive_set(-25_in, DRIVE_SPEED);
+  chassis.pid_wait_quick_chain();
+  //pros::delay(200);
+  chassis.pid_turn_set(-62_deg, 90);
+  matchloader.set_value(true);
+  pros::delay(50);
+  chassis.pid_wait();
+  chassis.pid_turn_set(-55_deg, 90);
+  chassis.pid_wait_quick_chain();
+  chassis.pid_drive_set(1_in, DRIVE_SPEED);
+  chassis.pid_wait_quick_chain();
+  chassis.pid_swing_set(ez::LEFT_SWING, 0_deg, SWING_SPEED, 39);
+  chassis.pid_wait();
+  chassis.pid_drive_set(4_in, DRIVE_SPEED);
+  chassis.pid_wait_quick_chain();
+  chassis.pid_swing_set(ez::LEFT_SWING, 181_deg, SWING_SPEED, 2);
+  chassis.pid_wait_quick();
+  chassis.pid_drive_set(12_in, DRIVE_SPEED);
+  pros::delay(400);
+  flywheel.move(-127);
+  chassis.pid_wait_quick_chain();
+  pros::delay(500);
+  chassis.pid_drive_set(-2_in, DRIVE_SPEED);
+  chassis.pid_wait_quick_chain();
+  chassis.pid_turn_set(177_deg, TURN_SPEED);
+  chassis.pid_wait_quick_chain();
+  chassis.pid_drive_set(-20_in, DRIVE_SPEED);
+  flywheel.move(70);
+  chassis.pid_wait_quick_chain();
+  chassis.pid_drive_set(-4_in, 80);
+  chassis.pid_wait_quick_chain();
+  pros::delay(400);
+  chassis.pid_turn_set(207_deg, TURN_SPEED);
+  chassis.pid_wait_quick_chain();
+  chassis.pid_drive_set(21_in, DRIVE_SPEED);
+  chassis.pid_wait_quick_chain();
+  chassis.pid_turn_set(221_deg, TURN_SPEED);
+  chassis.pid_wait_quick_chain();
+  intake.move(-50);
+  chassis.pid_drive_set(30_in, DRIVE_SPEED);
+  intake.move(127);
+  flywheel.move(127);
+  chassis.pid_wait_quick_chain();
+  pros::delay(500);
+  chassis.pid_drive_set(-4_in, DRIVE_SPEED);
   chassis.pid_wait_quick_chain();
   flywheel.move(-127);
   pros::delay(1500);
-  matchloader.set_value(false);
-  flywheel.move(0);
-  chassis.pid_turn_set(1_deg, TURN_SPEED);
+  chassis.pid_drive_set(-23_in, DRIVE_SPEED);
   chassis.pid_wait_quick_chain();
-  chassis.pid_drive_set(-7.5_in, 100);
+  chassis.pid_turn_set(180_deg, TURN_SPEED);
   chassis.pid_wait_quick_chain();
-  matchloader.set_value(true);
-  pros::delay(400);
-  matchloader.set_value(false);
-  chassis.pid_drive_set(-50_in, 100);
+  chassis.pid_drive_set(20_in, DRIVE_SPEED);
   chassis.pid_wait_quick_chain();
-  matchloader.set_value(true);
-  pros::delay(400);
-  matchloader.set_value(false);
-  chassis.pid_turn_set(-48_deg, TURN_SPEED);
-  chassis.pid_wait_quick_chain();
-  intake.move(0);
-  intake.move_relative(-100, 127);
-  chassis.pid_drive_set(22_in, DRIVE_SPEED);
-  chassis.pid_wait_quick_chain();
-  intake.move(127);
-
+  pros::delay(1500);
 }
 
 ///
-// Combining Turn + Drive
-///
-void drive_and_turn() {
-  chassis.pid_drive_set(24_in, DRIVE_SPEED, true);
-  chassis.pid_wait();
-
-  chassis.pid_turn_set(45_deg, TURN_SPEED);
-  chassis.pid_wait();
-
-  chassis.pid_turn_set(-45_deg, TURN_SPEED);
-  chassis.pid_wait();
-
-  chassis.pid_turn_set(0_deg, TURN_SPEED);
-  chassis.pid_wait();
-
-  chassis.pid_drive_set(-24_in, DRIVE_SPEED, true);
-  chassis.pid_wait();
-}
-
-///
-// Wait Until and Changing Max Speed
+// 9 Ball Left
 ///
 void wait_until_change_speed() {
-  // pid_wait_until will wait until the robot gets to a desired position
 
-  // When the robot gets to 6 inches slowly, the robot will travel the remaining distance at full speed
-  chassis.pid_drive_set(24_in, 30, true);
-  chassis.pid_wait_until(6_in);
-  chassis.pid_speed_max_set(DRIVE_SPEED);  // After driving 6 inches at 30 speed, the robot will go the remaining distance at DRIVE_SPEED
+  // 9 Ball Left
+  intake.move(127);
+  flywheel.move(50);
+  chassis.pid_turn_set(-17_deg, 90);
+  chassis.pid_wait_quick_chain();
+  chassis.pid_drive_set(-17_in, DRIVE_SPEED);
+  chassis.pid_wait_quick_chain();
+  matchloader.set_value(true);
+  pros::delay(150);
+  chassis.pid_turn_set(-47_deg, 90);
+  chassis.pid_wait_quick_chain();
+  matchloader.set_value(false); 
+  chassis.pid_drive_set(-25_in, DRIVE_SPEED);
+  chassis.pid_wait_quick_chain();
+  //pros::delay(200);
+  chassis.pid_turn_set(-62_deg, 90);
+  matchloader.set_value(true);
+  pros::delay(50);
   chassis.pid_wait();
+  chassis.pid_turn_set(-55_deg, 90);
+  chassis.pid_wait_quick_chain();
+  chassis.pid_drive_set(1_in, DRIVE_SPEED);
+  chassis.pid_wait_quick_chain();
+  chassis.pid_swing_set(ez::LEFT_SWING, 0_deg, SWING_SPEED, 39);
+  chassis.pid_wait();
+  chassis.pid_drive_set(4_in, DRIVE_SPEED);
+  chassis.pid_wait_quick_chain();
+  chassis.pid_swing_set(ez::LEFT_SWING, 181_deg, SWING_SPEED, 2);
+  chassis.pid_wait_quick();
+  chassis.pid_drive_set(12_in, DRIVE_SPEED);
+  pros::delay(400);
+  flywheel.move(-127);
+  chassis.pid_wait_quick_chain();
+  pros::delay(500);
+  chassis.pid_drive_set(-2_in, DRIVE_SPEED);
+  chassis.pid_wait_quick_chain();
+  chassis.pid_turn_set(177_deg, TURN_SPEED);
+  chassis.pid_wait_quick_chain();
+  chassis.pid_drive_set(-20_in, DRIVE_SPEED);
+  flywheel.move(70);
+  chassis.pid_wait_quick_chain();
+  chassis.pid_drive_set(-4_in, 80);
+  chassis.pid_wait_quick_chain();
+  pros::delay(550);
+  chassis.pid_drive_set(27_in, DRIVE_SPEED);
+  pros::delay(420);
+  flywheel.move(-127);
+  chassis.pid_wait_quick_chain();
+  pros::delay(1450);
 
-  chassis.pid_turn_set(45_deg, TURN_SPEED);
-  chassis.pid_wait();
+  chassis.drive_sensor_reset();               // Reset drive sensors to 0
+      chassis.drive_imu_reset();                  // Reset gyro position to 0
+      chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position to (0, 0, 0)
+      
 
-  chassis.pid_turn_set(-45_deg, TURN_SPEED);
-  chassis.pid_wait();
-
-  chassis.pid_turn_set(0_deg, TURN_SPEED);
-  chassis.pid_wait();
-
-  // When the robot gets to -6 inches slowly, the robot will travel the remaining distance at full speed
-  chassis.pid_drive_set(-24_in, 30, true);
-  chassis.pid_wait_until(-6_in);
-  chassis.pid_speed_max_set(DRIVE_SPEED);  // After driving 6 inches at 30 speed, the robot will go the remaining distance at DRIVE_SPEED
-  chassis.pid_wait();
+        chassis.pid_turn_set(-55_deg, 127);
+        chassis.pid_wait_quick_chain();
+        chassis.pid_swing_set(ez::RIGHT_SWING, -10, 127, 0);
+        chassis.pid_wait_quick_chain();
+        chassis.pid_drive_set(20_in, 100);
+        chassis.pid_wait_quick_chain();
+  pros::delay(5000);
 }
 
 ///
-// Swing Example
+// 9 Ball Right
 ///
 void swing_example() {
-  // The first parameter is ez::LEFT_SWING or ez::RIGHT_SWING
-  // The second parameter is the target in degrees
-  // The third parameter is the speed of the moving side of the drive
-  // The fourth parameter is the speed of the still side of the drive, this allows for wider arcs
+  // 9 Ball Right
 
-  chassis.pid_swing_set(ez::LEFT_SWING, 45_deg, SWING_SPEED, 45);
+  intake.move(127);
+  flywheel.move(50);
+  chassis.pid_turn_set(17_deg, 90);
+  chassis.pid_wait_quick_chain();
+  chassis.pid_drive_set(-17_in, DRIVE_SPEED);
+  chassis.pid_wait_quick_chain();
+  matchloader.set_value(true);
+  pros::delay(150);
+  chassis.pid_turn_set(47_deg, 90);
+  chassis.pid_wait_quick_chain();
+  matchloader.set_value(false); 
+  chassis.pid_drive_set(-25_in, DRIVE_SPEED);
+  chassis.pid_wait_quick_chain();
+  //pros::delay(200);
+  chassis.pid_turn_set(62_deg, 90);
+  matchloader.set_value(true);
+  pros::delay(50);
   chassis.pid_wait();
+  chassis.pid_turn_set(55_deg, 90);
+  chassis.pid_wait_quick_chain();
+  chassis.pid_drive_set(1_in, DRIVE_SPEED);
+  chassis.pid_wait_quick_chain();
+  chassis.pid_swing_set(ez::RIGHT_SWING, 0_deg, SWING_SPEED, 39);
+  chassis.pid_wait();
+  chassis.pid_drive_set(15_in, DRIVE_SPEED);
+  chassis.pid_wait_quick_chain();
+  chassis.pid_turn_set(-90_deg, TURN_SPEED);
+  chassis.pid_wait_quick_chain();
+  chassis.pid_drive_set(15_in, DRIVE_SPEED);
+  chassis.pid_wait_quick_chain();
+  chassis.pid_turn_set(-178_deg, TURN_SPEED);
+  chassis.pid_wait_quick_chain();
+  chassis.pid_drive_set(12_in, DRIVE_SPEED);
+  pros::delay(800);
+  flywheel.move(-127);
+  chassis.pid_wait_quick_chain();
+  pros::delay(550);
+  chassis.pid_drive_set(-2_in, DRIVE_SPEED);
+  chassis.pid_wait_quick_chain();
+  chassis.pid_turn_set(-177_deg, TURN_SPEED);
+  chassis.pid_wait_quick_chain();
+  chassis.pid_drive_set(-20_in, DRIVE_SPEED);
+  flywheel.move(70);
+  chassis.pid_wait_quick_chain();
+  chassis.pid_drive_set(-4_in, 80);
+  chassis.pid_wait_quick_chain();
+  pros::delay(550);
+  chassis.pid_drive_set(27_in, DRIVE_SPEED);
+  pros::delay(420);
+  flywheel.move(-127);
+  chassis.pid_wait_quick_chain();
+  pros::delay(1450);
 
-  chassis.pid_swing_set(ez::RIGHT_SWING, 0_deg, SWING_SPEED, 45);
-  chassis.pid_wait();
+  chassis.drive_sensor_reset();               // Reset drive sensors to 0
+      chassis.drive_imu_reset();                  // Reset gyro position to 0
+      chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position to (0, 0, 0)
+      
 
-  chassis.pid_swing_set(ez::RIGHT_SWING, 45_deg, SWING_SPEED, 45);
-  chassis.pid_wait();
-
-  chassis.pid_swing_set(ez::LEFT_SWING, 0_deg, SWING_SPEED, 45);
-  chassis.pid_wait();
+        chassis.pid_turn_set(-55_deg, 127);
+        chassis.pid_wait_quick_chain();
+        chassis.pid_swing_set(ez::RIGHT_SWING, -10, 127, 0);
+        chassis.pid_wait_quick_chain();
+        chassis.pid_drive_set(20_in, 90);
+        chassis.pid_wait_quick_chain();
+  pros::delay(5000);
 }
 
 ///
